@@ -18,7 +18,7 @@ The application is driven by server-side competition data and supports registrat
 
 
 backend/
-    src/
+        src/
         models/
         routes/
         utils/
