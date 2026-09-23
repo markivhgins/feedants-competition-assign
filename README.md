@@ -16,25 +16,25 @@ The application is driven by server-side competition data and supports registrat
 
 ## Project Structure
 
-.
-├── backend/
-│   ├── src/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── utils/
-│   │   └── seed.js
-│   └── .env.example
-│
-├── mobile/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── screens/
-│   │   └── services/
-│   └── .env.example
-│
-├── reference/
-├── docker-compose.yml
-└── package.json
+
+backend/
+    src/
+        models/
+        routes/
+        utils/
+        seed.js
+    .env.example
+
+mobile/
+    src/
+        components/
+        screens/
+        services/
+    .env.example
+
+reference/
+docker-compose.yml
+package.json
 
 ## Requirements
 
