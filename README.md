@@ -1,121 +1,270 @@
-# Feedants Full Stack Development Technical Assignment
+# Feedants Competition Details
 
-A functional React Native competition details screen backed by Node.js, Express, and MongoDB. The implementation keeps competition content in MongoDB and derives lifecycle, participation, remaining spots, countdowns, and submission state from server data.
+A full-stack implementation of the Feedants competition details experience built with React Native, Expo, Node.js, Express, and MongoDB.
 
-## Project structure
+The application is driven by server-side competition data and supports registration, competition lifecycle states, participant counts, countdowns, and submission handling.
 
-- `mobile/` React Native app built with Expo
-- `backend/` Express API, Mongoose models, registration and submission logic
-- `docker-compose.yml` local MongoDB replica set for transaction support
+## Tech Stack
+
+- React Native + Expo
+- Node.js
+- Express
+- MongoDB
+- Mongoose
+- Multer
+- Docker (optional local MongoDB setup)
+
+## Project Structure
+
+.
+├── backend/
+│   ├── src/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── utils/
+│   │   └── seed.js
+│   └── .env.example
+│
+├── mobile/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── screens/
+│   │   └── services/
+│   └── .env.example
+│
+├── reference/
+├── docker-compose.yml
+└── package.json
 
 ## Requirements
 
-- Node.js 20.19+
+- Node.js 20+
 - npm 10+
-- Docker Desktop for the provided MongoDB setup, or a MongoDB instance configured for transactions
+- MongoDB database
+- Expo-compatible environment for running the mobile application
 
-## Run locally
+MongoDB Atlas can be used directly. A local MongoDB replica-set configuration is also provided through Docker.
 
-1. Start MongoDB:
+## Setup
 
-```bash
-docker compose up -d
-```
+### 1. Install dependencies
 
-2. Install dependencies:
+From the project root:
 
-```bash
 npm install
-```
 
-3. Seed the competition:
+### 2. Configure the backend
 
-```bash
+Create:
+
+backend/.env
+
+from the provided example:
+
+cp backend/.env.example backend/.env
+
+Configure the MongoDB connection:
+
+MONGODB_URI=your_mongodb_connection_string
+PORT=4000
+CORS_ORIGIN=*
+DEMO_USER_ID=demo-user-001
+
+Do not commit backend/.env.
+
+### 3. Seed the database
+
 npm run seed
-```
 
-To switch immediately into the submission window for testing the upload flow:
+The seed script creates the competition data and a registered demo user.
 
-```bash
+The seed data uses relative dates so that the competition can be tested without manually updating expired timestamps.
+
+To seed directly into the submission phase:
+
 DEMO_PHASE=submission npm run seed
-```
 
-4. Start the API:
+## Running the Backend
 
-```bash
 npm run dev:backend
-```
 
-The API is available at `http://localhost:4000`.
+The API runs on:
 
-5. Start the React Native app:
+http://localhost:4000
 
-```bash
-npm run start:mobile
-```
+Health check:
 
-Expo will provide the development server. For a physical device, create `mobile/.env` with the computer's LAN IP:
+GET /health
 
-```env
-EXPO_PUBLIC_API_BASE_URL=http://192.168.1.10:4000/api
+## Running the Mobile App
+
+Create:
+
+mobile/.env
+
+using:
+
+EXPO_PUBLIC_API_BASE_URL=http://localhost:4000/api
 EXPO_PUBLIC_USER_ID=demo-user-001
-```
 
-For the Android emulator, `http://10.0.2.2:4000/api` is normally the correct base URL.
+Then start Expo:
 
-The seeded demo user is already registered so the initial screen matches the supplied reference. Set `EXPO_PUBLIC_USER_ID=demo-user-002` to exercise the registration flow from an unregistered user.
+npm run start:mobile
 
-## Web smoke build
+### Physical Android Device
 
-```bash
+Replace localhost with the LAN IP address of the machine running the backend:
+
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.10:4000/api
+
+The phone and computer must be connected to the same network.
+
+### Android Emulator
+
+Use:
+
+EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:4000/api
+
+## Testing the Registration Flow
+
+The default seeded user is:
+
+demo-user-001
+
+and is registered by default.
+
+To test registration from an unregistered user, use:
+
+EXPO_PUBLIC_USER_ID=demo-user-002
+
+The registration flow is backed by the API and updates the competition participant count.
+
+## Submission Flow
+
+The submission flow can be tested by seeding the competition into the submission phase:
+
+DEMO_PHASE=submission npm run seed
+
+The registered demo user can then upload an image or video submission through the application.
+
+Uploaded files are stored locally under:
+
+backend/uploads/
+
+For a production deployment, these files would be stored in object storage rather than the application filesystem.
+
+## Web Smoke Build
+
+The Expo application can also be exported for web:
+
 npm run build:mobile
-```
 
-This exports the Expo app for the web platform and catches frontend module and bundling errors without requiring a simulator.
+This provides a quick way to verify frontend bundling and module compatibility.
 
 ## API
 
-`GET /health`
+### Get Competition
 
-`GET /api/competitions/:slug?userId=demo-user-001`
+GET /api/competitions/:slug?userId=demo-user-001
 
-`POST /api/competitions/:slug/register`
+Returns competition details including:
 
-Body:
+- Competition lifecycle
+- Participant count
+- Remaining spots
+- Registration status
+- Submission status
+- Competition dates
+- Judge information
+- Rewards
+- Winners
+- Referral information
 
-```json
+### Register
+
+POST /api/competitions/:slug/register
+
+Request body:
+
 {
   "userId": "demo-user-001"
 }
-```
 
-`POST /api/competitions/:slug/submission`
+### Submit
 
-Multipart fields:
+POST /api/competitions/:slug/submission
 
-- `userId`
-- `file`
+Multipart form fields:
 
-## Assumptions
+userId
+file
 
-Authentication is represented by a demo user ID because the assignment does not provide an auth service. The app sends that ID with every request so the registration state is user-specific.
+Only image and video submissions are accepted, with a maximum file size of 100 MB.
 
-The seed script creates relative dates so the registration window is open when the project is first seeded. This keeps the demo usable without editing stale dates.
+## Implementation Details
 
-Payment and referral flows are represented as UI and data fields rather than integrated with live third-party services because no credentials or payment flow were supplied.
+### Competition Lifecycle
 
-## Important technical decisions
+The competition lifecycle is derived from server-side timestamps rather than being hardcoded in the frontend.
 
-Registration is protected by a MongoDB transaction and a unique `(competitionId, userId)` index. The competition capacity update is conditional on the current count being below the maximum, preventing two successful registrations from consuming the same final spot.
+The application handles states including:
 
-The frontend does not hardcode competition values. The screen is driven by the API response and recalculates the countdown locally from server-provided timestamps.
+- Registration open
+- Submission open
+- Registration/submission closed
 
-Submission files are accepted through Multer and stored under `backend/uploads/` for this assignment. A production deployment would move these files to object storage and store only durable metadata in MongoDB.
+The frontend calculates countdowns from the timestamps returned by the API.
 
-## Trade-offs
+### Registration Concurrency
 
-A full authentication system, payment integration, object storage, CDN, background jobs, analytics, and moderation workflow are intentionally outside the supplied scope. The API and data model leave clear boundaries for adding them later.
+Registration is handled inside a MongoDB transaction.
 
-## Production improvements
+A unique index on:
 
-I would add authenticated sessions and authorization, signed object-storage uploads, rate limiting, request validation with a schema library, structured logging, metrics and tracing, idempotency keys for money-related operations, automated database backups, CI/CD, malware scanning for uploads, and a real media-processing pipeline.
+competitionId + userId
+
+prevents duplicate registrations.
+
+The participant count is incremented conditionally only while capacity remains, preventing registrations from exceeding the configured participant limit.
+
+### User State
+
+Authentication was outside the scope of the assignment, so a demo user ID is used to represent the current user.
+
+The API uses this ID to determine whether the user has registered and whether they can submit.
+
+## Assumptions and Scope
+
+The assignment did not provide an authentication service, payment credentials, or third-party storage configuration.
+
+Therefore:
+
+- Authentication is represented by a demo user ID.
+- Payment information is represented as competition data/UI.
+- Referral information is represented as competition data/UI.
+- Submission files are stored locally for the assignment.
+
+These boundaries can be replaced with production services without changing the core competition lifecycle and registration flow.
+
+## Tests
+
+Backend tests can be run with:
+
+npm test
+
+The test suite covers core lifecycle logic and API health behaviour.
+
+## Production Considerations
+
+For production, I would add:
+
+- Authenticated sessions and authorization
+- Schema-based request validation
+- Rate limiting
+- Object storage for submissions
+- Malware scanning for uploaded files
+- Structured logging and monitoring
+- Automated database backups
+- CI/CD
+- Media processing
+- Idempotency for payment-related operations
