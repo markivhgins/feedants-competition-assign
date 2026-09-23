@@ -1,0 +1,21 @@
+{
+  "name": "feedants-competition-details",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "backend",
+    "mobile"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "dev:backend": "npm --workspace backend run dev",
+    "seed": "npm --workspace backend run seed",
+    "test": "npm --workspace backend test",
+    "start:mobile": "npm --workspace mobile run start",
+    "web:mobile": "npm --workspace mobile run web",
+    "build:mobile": "npm --workspace mobile run export"
+  },
+  "dependencies": {
+    "expo": "~57.0.24"
+  }
+}
